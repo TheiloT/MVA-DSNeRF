@@ -183,6 +183,7 @@ def render_path(render_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=N
             filename = os.path.join(savedir, '{:03d}.png'.format(i))
             imageio.imwrite(filename, rgb8)
             depth = depth.cpu().numpy()
+            depth = to8b(depth / np.percentile(depth, 95))
             print("max:", np.nanmax(depth))
             # depth = depth / 5 * 255
             # depth_color = cv2.applyColorMap(depth.astype(np.uint8), cv2.COLORMAP_JET)[:,:,::-1]
