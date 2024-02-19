@@ -20,13 +20,13 @@ import subprocess
 #     --output_path $DATASET_PATH/sparse
 
 # $ mkdir $DATASET_PATH/dense
-def run_colmap(basedir, match_type):
+def run_colmap(basedir, match_type, colmap_path):
     
     logfile_name = os.path.join(basedir, 'colmap_output.txt')
     logfile = open(logfile_name, 'w')
     
     feature_extractor_args = [
-        '/home/jasonzh2/.local/bin/colmap', 'feature_extractor', 
+        colmap_path, 'feature_extractor', 
             '--database_path', os.path.join(basedir, 'database.db'), 
             '--image_path', os.path.join(basedir, 'images'),
             '--ImageReader.single_camera', '1',
@@ -37,7 +37,7 @@ def run_colmap(basedir, match_type):
     print('Features extracted')
 
     exhaustive_matcher_args = [
-        '/home/jasonzh2/.local/bin/colmap', match_type, 
+        colmap_path, match_type, 
             '--database_path', os.path.join(basedir, 'database.db'), 
     ]
 
@@ -58,7 +58,7 @@ def run_colmap(basedir, match_type):
     #         '--Mapper.init_min_tri_angle', '4',
     # ]
     mapper_args = [
-        '/home/jasonzh2/.local/bin/colmap', 'mapper',
+        colmap_path, 'mapper',
             '--database_path', os.path.join(basedir, 'database.db'),
             '--image_path', os.path.join(basedir, 'images'),
             '--output_path', os.path.join(basedir, 'sparse'), # --export_path changed to --output_path in colmap 3.6

@@ -97,7 +97,9 @@ See the following directory structure for an example:
 
 This step is necessary only when you want to run on your data.
 
-First, place your scene directory somewhere. See the following directory structure for an example:
+First, make sure you have `mogrify` linux command installed.
+
+Then, place your scene directory somewhere. See the following directory structure for an example:
 ```
 ├── data
 │   ├── fern_2v
@@ -108,7 +110,7 @@ First, place your scene directory somewhere. See the following directory structu
 
 To generate the poses and sparse point cloud:
 ```
-python imgs2poses.py <your_scenedir>
+python imgs2poses.py --scenedir <your_scenedir> --colmap_path <path_to_your_colmap_executable>
 ```
 
 Note: if you use this data format, make sure your `dataset_type` in the config file is set as `llff`.
