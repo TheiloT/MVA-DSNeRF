@@ -1106,8 +1106,8 @@ def train():
 
             filenames = [os.path.join(testsavedir, '{:03d}.png'.format(k)) for k in range(len(i_test))]
 
-            test_loss = img2mse(torch.Tensor(rgbs), images[i_test])
-            test_psnr = mse2psnr(test_loss)
+            # test_loss = img2mse(torch.Tensor(rgbs), images[i_test])
+            # test_psnr = mse2psnr(test_loss)
 
     
         if i%args.i_print==0:
