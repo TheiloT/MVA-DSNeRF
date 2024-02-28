@@ -75,6 +75,7 @@ def get_embedder(multires, i=0):
 class NeRF(nn.Module):
     def __init__(self, D=8, W=256, input_ch=3, input_ch_views=3, output_ch=4, skips=[4], use_viewdirs=False):
         """ 
+        use_viewdirs determines whether to use the view directions to compute the RGB output after computing the alpha output.
         """
         super(NeRF, self).__init__()
         self.D = D
@@ -156,6 +157,8 @@ class NeRF(nn.Module):
         self.alpha_linear.bias.data = torch.from_numpy(np.transpose(weights[idx_alpha_linear+1]))
 
 class NeRF_RGB(nn.Module):
+    """ A version of NeRF that does not compute the opcacity alpha.
+    Alpha may be computed by alpha_model, in which case the output alpha is concatenated to the rgb output when use_viewdirs is True. """
     def __init__(self, D=8, W=256, input_ch=3, input_ch_views=3, output_ch=4, skips=[4], use_viewdirs=False, alpha_model=None):
         """ 
         """

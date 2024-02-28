@@ -81,6 +81,7 @@ class SigmaLoss:
 
         # sigma = F.relu(raw[...,3] + noise)
         alpha = raw2alpha(raw[...,3] + noise, dists)  # [N_rays, N_samples]
+        # The cumsum corresponds to T_i, p.6 of the original NeRF paper. So weights corresponds to h in the DSNeRF paper.
         weights = alpha * torch.cumprod(torch.cat([torch.ones((alpha.shape[0], 1)).to(device), 1.-alpha + 1e-10], -1), -1)[:, :-1]
         
         
