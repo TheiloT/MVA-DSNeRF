@@ -1,0 +1,46 @@
+# Experiment info
+expname = table_5v_no_ds
+basedir = ./logs/table_5v_no_ds
+datadir = ./data/table_5v
+
+# Dataset options
+dataset_type = llff
+testskip = 1
+factor = 4
+no_ndc = True
+lindisp = False
+llffhold = 8
+
+# logging
+i_print = 50
+i_img = 150002
+i_weights = 5000
+i_testset = 10000
+i_video = 150001
+
+# Training options
+N_iters = 150001
+N_rand = 4096
+no_batching = False
+no_reload = False
+no_coarse = False
+train_scene = [0,1,2,3,4]
+test_scene = [5, 6, 7, 8, 9]
+
+# Rendering options
+N_samples = 64
+N_importance = 128
+use_viewdirs = True
+raw_noise_std = 1e0
+
+# Poses to render
+render_only = False
+
+# Depth supervision
+colmap_depth = True
+depth_loss = False
+depth_lambda = 0
+sigma_loss = False
+sigma_lambda = 0.1
+depth_with_rgb = False
+depth_rays_prop = 0.4

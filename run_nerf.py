@@ -1007,10 +1007,16 @@ def train():
         # timer_concate = time.perf_counter()
 
 
-        rgb, disp, acc, depth, extras = render(H, W, focal, chunk=args.chunk, rays=batch_rays, N_batch=N_batch, 
-                                               supervision_depths=target_depth, err_weights=ray_weights,
-                                                verbose=i < 10, retraw=True,
-                                                **render_kwargs_train)
+        if args.sigma_loss:
+            rgb, disp, acc, depth, extras = render(H, W, focal, chunk=args.chunk, rays=batch_rays, N_batch=N_batch, 
+                                                    supervision_depths=target_depth, err_weights=ray_weights,
+                                                    verbose=i < 10, retraw=True,
+                                                    **render_kwargs_train)
+        else:
+            rgb, disp, acc, depth, extras = render(H, W, focal, chunk=args.chunk, rays=batch_rays,
+                                                    verbose=i < 10, retraw=True,
+                                                    **render_kwargs_train)
+            
         # timer_iter = time.perf_counter()
 
         if args.colmap_depth and not args.depth_with_rgb:
