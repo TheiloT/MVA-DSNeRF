@@ -63,12 +63,19 @@ def run_network(inputs, viewdirs, fn, embed_fn, embeddirs_fn, netchunk=1024*64):
     return outputs
 
 
-def batchify_rays(rays_flat, chunk=1024*32, **kwargs):
+def batchify_rays(rays_flat, chunk=1024*32, N_batch=None, supervision_depths=None, err_weights=None, **kwargs):
     """Render rays in smaller minibatches to avoid OOM.
     """
     all_ret = {}
-    for i in range(0, rays_flat.shape[0], chunk):
-        ret = render_rays(rays_flat[i:i+chunk], **kwargs)
+    N_unsupervised = rays_flat.shape[0] if N_batch is None else N_batch
+    for i in range(0, N_unsupervised, chunk):
+        ret = render_rays(rays_flat[i:min(i+chunk, N_unsupervised)], **kwargs)
+        for k in ret:
+            if k not in all_ret:
+                all_ret[k] = []
+            all_ret[k].append(ret[k])
+    for i in range(N_unsupervised, rays_flat.shape[0], chunk):
+        ret = render_rays(rays_flat[i:i+chunk], depths=supervision_depths, errs=err_weights, **kwargs)
         for k in ret:
             if k not in all_ret:
                 all_ret[k] = []
@@ -79,8 +86,9 @@ def batchify_rays(rays_flat, chunk=1024*32, **kwargs):
 
 
 def render(H, W, focal, chunk=1024*32, rays=None, c2w=None, ndc=True,
-                  near=0., far=1.,
-                  use_viewdirs=False, c2w_staticcam=None, depths=None,
+                  near=0., far=1., 
+                  use_viewdirs=False, c2w_staticcam=None, 
+                  N_batch=None, supervision_depths=None, err_weights=None,
                   **kwargs):
     """Render rays
     Args:
@@ -98,12 +106,19 @@ def render(H, W, focal, chunk=1024*32, rays=None, c2w=None, ndc=True,
       use_viewdirs: bool. If True, use viewing direction of a point in space in model.
       c2w_staticcam: array of shape [3, 4]. If not None, use this transformation matrix for 
        camera while using other c2w argument for viewing directions.
+      N_batch: Number of rays without available depth supervision
+      supervision_depth: ground truth depth used for supervision in the sigma loss
+      err_weights: reprojection errors to weight the depth supervision.
     Returns:
       rgb_map: [batch_size, 3]. Predicted RGB values for rays.
       disp_map: [batch_size]. Disparity map. Inverse of depth.
       acc_map: [batch_size]. Accumulated opacity (alpha) along a ray.
       extras: dict with everything returned by render_rays().
     """
+    assert (
+        (N_batch is None and supervision_depths is None and err_weights is None and kwargs.get("sigma_loss", None) is None)
+        or (N_batch is not None and supervision_depths is not None and err_weights is not None and kwargs.get("sigma_loss", None) is not None)
+    )
     if c2w is not None:
         # special case to render full image
         rays_o, rays_d = get_rays(H, W, focal, c2w)
@@ -131,13 +146,11 @@ def render(H, W, focal, chunk=1024*32, rays=None, c2w=None, ndc=True,
 
     near, far = near * torch.ones_like(rays_d[...,:1]), far * torch.ones_like(rays_d[...,:1])
     rays = torch.cat([rays_o, rays_d, near, far], -1) # B x 8
-    if depths is not None:
-        rays = torch.cat([rays, depths.reshape(-1,1)], -1)
     if use_viewdirs:
         rays = torch.cat([rays, viewdirs], -1)
 
     # Render and reshape
-    all_ret = batchify_rays(rays, chunk, **kwargs)
+    all_ret = batchify_rays(rays, chunk, N_batch=N_batch, supervision_depths=supervision_depths, err_weights=err_weights, **kwargs)
     for k in all_ret:
         k_sh = list(sh[:-1]) + list(all_ret[k].shape[1:])
         all_ret[k] = torch.reshape(all_ret[k], k_sh)
@@ -351,6 +364,8 @@ def render_rays(ray_batch,
                 network_fine=None,
                 white_bkgd=False,
                 raw_noise_std=0.,
+                depths=None,
+                errs=None,
                 verbose=False,
                 pytest=False,
                 sigma_loss=None):
@@ -460,9 +475,13 @@ def render_rays(ray_batch,
         ret['acc0'] = acc_map_0
         ret['z_std'] = torch.std(z_samples, dim=-1, unbiased=False)  # [N_rays]
 
-    if sigma_loss is not None and ray_batch.shape[-1] > 11:
-        depths = ray_batch[:,8]
-        ret['sigma_loss'] = sigma_loss.calculate_loss(rays_o, rays_d, viewdirs, near, far, depths, network_query_fn, network_fine)
+    if sigma_loss is not None:
+        if depths is None:
+            ret['sigma_loss'] = torch.zeros((rays_o.shape[0])).to(device)
+        elif errs is None:
+            ret['sigma_loss'] = sigma_loss.calculate_loss(rays_o, rays_d, viewdirs, near, far, depths, network_query_fn, network_fine, err=1)
+        else:
+            ret['sigma_loss'] = sigma_loss.calculate_loss(rays_o, rays_d, viewdirs, near, far, depths, network_query_fn, network_fine, err=errs)
 
     for k in ret:
         if (torch.isnan(ret[k]).any() or torch.isinf(ret[k]).any()) and DEBUG:
@@ -862,7 +881,7 @@ def train():
             for i in i_train:
                 rays_depth = np.stack(get_rays_by_coord_np(H, W, focal, poses[i,:3,:4], depth_gts[i]['coord']), axis=0) # 2 x N x 3
                 # print(rays_depth.shape)
-                rays_depth = np.transpose(rays_depth, [1,0,2])
+                rays_depth = np.transpose(rays_depth, [1,0,2]) # N x 2 x 3
                 depth_value = np.repeat(depth_gts[i]['depth'][:,None,None], 3, axis=2) # N x 1 x 3
                 weights = np.repeat(depth_gts[i]['error'][:,None,None], 3, axis=2) # N x 1 x 3
                 rays_depth = np.concatenate([rays_depth, depth_value, weights], axis=1) # N x 4 x 3
@@ -930,6 +949,9 @@ def train():
                 batch_rays_depth = batch_depth[:2] # 2 x B x 3
                 target_depth = batch_depth[2,:,0] # B
                 ray_weights = batch_depth[3,:,0]
+            else:
+                target_depth=None
+                ray_weights=None
 
             # i_batch += N_rand
             # if i_batch >= rays_rgb.shape[0] or (args.colmap_depth and i_batch >= rays_depth.shape[0]):
@@ -978,11 +1000,15 @@ def train():
         if args.colmap_depth:
             N_batch = batch_rays.shape[1]
             batch_rays = torch.cat([batch_rays, batch_rays_depth], 1) # (2, 2 * N_rand, 3)
+        else:
+            N_batch = None
+        
 
         # timer_concate = time.perf_counter()
 
 
-        rgb, disp, acc, depth, extras = render(H, W, focal, chunk=args.chunk, rays=batch_rays,
+        rgb, disp, acc, depth, extras = render(H, W, focal, chunk=args.chunk, rays=batch_rays, N_batch=N_batch, 
+                                               supervision_depths=target_depth, err_weights=ray_weights,
                                                 verbose=i < 10, retraw=True,
                                                 **render_kwargs_train)
         # timer_iter = time.perf_counter()
@@ -995,7 +1021,7 @@ def train():
             disp = disp[:N_batch]
             acc = acc[:N_batch]
             depth, depth_col = depth[:N_batch], depth[N_batch:]
-            extras = {x:extras[x][:N_batch] for x in extras}
+            extras_rgb = {x:extras[x][:N_batch] for x in extras}
             extras_col = {x:extras[x][N_batch:] for x in extras}
 
         elif args.colmap_depth and args.depth_with_rgb:
@@ -1021,14 +1047,14 @@ def train():
         if args.sigma_loss:
             sigma_loss = extras_col['sigma_loss'].mean()
             # print(sigma_loss)
-        trans = extras['raw'][...,-1]
+        trans = extras_rgb['raw'][...,-1]
         loss = img_loss + args.depth_lambda * depth_loss + args.sigma_lambda * sigma_loss
         psnr = mse2psnr(img_loss)
 
         # timer_loss = time.perf_counter()
 
-        if 'rgb0' in extras and not args.no_coarse:
-            img_loss0 = img2mse(extras['rgb0'], target_s)
+        if 'rgb0' in extras_rgb and not args.no_coarse:
+            img_loss0 = img2mse(extras_rgb['rgb0'], target_s)
             loss = loss + img_loss0
             psnr0 = mse2psnr(img_loss0)
 

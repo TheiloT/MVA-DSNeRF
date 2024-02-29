@@ -70,9 +70,10 @@ class SigmaLoss:
         pts = rays_o[...,None,:] + rays_d[...,None,:] * z_vals[...,:,None] # [N_rays, N_samples, 3]
         raw = run_func(pts, viewdirs, network)
 
-        noise = 0.
+        noise = torch.tensor(0)
         if self.raw_noise_std > 0.:
             noise = torch.randn(raw[...,3].shape) * self.raw_noise_std
+        noise = noise.to(device)
 
         dists = z_vals[...,1:] - z_vals[...,:-1]
         dists = torch.cat([dists, torch.Tensor([1e10]).to(device).expand(dists[...,:1].shape)], -1)  # [N_rays, N_samples]
@@ -84,8 +85,7 @@ class SigmaLoss:
         # The cumsum corresponds to T_i, p.6 of the original NeRF paper. So weights corresponds to h in the DSNeRF paper.
         weights = alpha * torch.cumprod(torch.cat([torch.ones((alpha.shape[0], 1)).to(device), 1.-alpha + 1e-10], -1), -1)[:, :-1]
         
-        
-        loss = -torch.log(weights + 1e-5) * torch.exp(-(z_vals - depths[:,None]) ** 2 / (2 * err)) * dists
+        loss = -torch.log(weights + 1e-5) * torch.exp(-(z_vals - depths[:,None]) ** 2 / (2 * err[:, None])) * dists
         loss = torch.sum(loss, dim=1)
         
         return loss
