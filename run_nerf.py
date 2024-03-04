@@ -640,6 +640,9 @@ def config_parser():
                     help="normalize depth before calculating loss")
     parser.add_argument("--depth_rays_prop", type=float, default=0.5,
                         help="Proportion of depth rays.")
+    parser.add_argument("--pixels_to_colmap_units", type=float, default=1e-5,
+                        help="Conversion factor from pixels to colmap units. Used to scale the projection error for depth supervision.")
+
     return parser
 
 
@@ -699,7 +702,7 @@ def train():
         print('NEAR FAR', near, far)
     elif args.dataset_type == 'llff':
         if args.colmap_depth:
-            depth_gts = load_colmap_depth(args.datadir, factor=args.factor, bd_factor=.75)
+            depth_gts = load_colmap_depth(args.datadir, factor=args.factor, bd_factor=.75, pixels_to_colmap_units=arg.pixels_to_colmap_units)
         images, poses, bds, render_poses, i_test = load_llff_data(args.datadir, args.factor,
                                                                   recenter=True, bd_factor=.75,
                                                                   spherify=args.spherify)
@@ -884,7 +887,8 @@ def train():
                 rays_depth = np.transpose(rays_depth, [1,0,2]) # N x 2 x 3
                 depth_value = np.repeat(depth_gts[i]['depth'][:,None,None], 3, axis=2) # N x 1 x 3
                 weights = np.repeat(depth_gts[i]['error'][:,None,None], 3, axis=2) # N x 1 x 3
-                rays_depth = np.concatenate([rays_depth, depth_value, weights], axis=1) # N x 4 x 3
+                raw_errors = np.repeat(depth_gts[i]['raw_error'][:,None,None], 3, axis=2) # N x 1 x 3
+                rays_depth = np.concatenate([rays_depth, depth_value, weights, raw_errors], axis=1) # N x 5 x 3
                 rays_depth_list.append(rays_depth)
 
             rays_depth = np.concatenate(rays_depth_list, axis=0)
@@ -949,9 +953,10 @@ def train():
                 batch_rays_depth = batch_depth[:2] # 2 x B x 3
                 target_depth = batch_depth[2,:,0] # B
                 ray_weights = batch_depth[3,:,0]
+                ray_raw_weights = batch_depth[4, :, 0]
             else:
                 target_depth=None
-                ray_weights=None
+                ray_raw_weights=None
 
             # i_batch += N_rand
             # if i_batch >= rays_rgb.shape[0] or (args.colmap_depth and i_batch >= rays_depth.shape[0]):
@@ -1006,10 +1011,9 @@ def train():
 
         # timer_concate = time.perf_counter()
 
-
         if args.sigma_loss:
             rgb, disp, acc, depth, extras = render(H, W, focal, chunk=args.chunk, rays=batch_rays, N_batch=N_batch, 
-                                                    supervision_depths=target_depth, err_weights=ray_weights,
+                                                    supervision_depths=target_depth, err_weights=ray_raw_weights,
                                                     verbose=i < 10, retraw=True,
                                                     **render_kwargs_train)
         else:

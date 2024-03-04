@@ -337,7 +337,7 @@ def get_poses(images):
         poses.append(c2w)
     return np.array(poses)
 
-def load_colmap_depth(basedir, factor=8, bd_factor=.75):
+def load_colmap_depth(basedir, factor=8, bd_factor=.75, pixels_to_colmap_units=1e-5):
     data_file = Path(basedir) / 'colmap_depth.npy'
     
     images = read_images_binary(Path(basedir) / 'sparse' / '0' / 'images.bin')
@@ -363,6 +363,7 @@ def load_colmap_depth(basedir, factor=8, bd_factor=.75):
         depth_list = []
         coord_list = []
         weight_list = []
+        errors_list = []
         for i in range(len(images[id_im].xys)):
             point2D = images[id_im].xys[i]
             id_3D = images[id_im].point3D_ids[i]
@@ -377,9 +378,11 @@ def load_colmap_depth(basedir, factor=8, bd_factor=.75):
             depth_list.append(depth)
             coord_list.append(point2D/factor)
             weight_list.append(weight)
+            err_colmap_unit = err * pixels_to_colmap_units * sc  # Convert to same unit as depth
+            errors_list.append(err_colmap_unit)
         if len(depth_list) > 0:
             print(id_im, len(depth_list), np.min(depth_list), np.max(depth_list), np.mean(depth_list))
-            data_list.append({"depth":np.array(depth_list), "coord":np.array(coord_list), "error":np.array(weight_list)})
+            data_list.append({"depth":np.array(depth_list), "coord":np.array(coord_list), "error":np.array(weight_list), "raw_error":np.array(errors_list)})
         else:
             print(id_im, len(depth_list))
     # json.dump(data_list, open(data_file, "w"))
