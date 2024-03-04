@@ -85,7 +85,10 @@ class SigmaLoss:
         # The cumsum corresponds to T_i, p.6 of the original NeRF paper. So weights corresponds to h in the DSNeRF paper.
         weights = alpha * torch.cumprod(torch.cat([torch.ones((alpha.shape[0], 1)).to(device), 1.-alpha + 1e-10], -1), -1)[:, :-1]
         
-        loss = -torch.log(weights + 1e-5) * torch.exp(-(z_vals - depths[:,None]) ** 2 / (2 * err[:, None]**2)) * dists
+        if type(err) == int:
+            loss = -torch.log(weights + 1e-5) * torch.exp(-(z_vals - depths[:,None]) ** 2 / (2 * err**2)) * dists
+        else:
+            loss = -torch.log(weights + 1e-5) * torch.exp(-(z_vals - depths[:,None]) ** 2 / (2 * err[:, None]**2)) * dists
         loss = torch.sum(loss, dim=1)
         
         return loss

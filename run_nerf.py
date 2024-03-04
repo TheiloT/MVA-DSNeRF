@@ -115,10 +115,6 @@ def render(H, W, focal, chunk=1024*32, rays=None, c2w=None, ndc=True,
       acc_map: [batch_size]. Accumulated opacity (alpha) along a ray.
       extras: dict with everything returned by render_rays().
     """
-    assert (
-        (N_batch is None and supervision_depths is None and err_weights is None and kwargs.get("sigma_loss", None) is None)
-        or (N_batch is not None and supervision_depths is not None and err_weights is not None and kwargs.get("sigma_loss", None) is not None)
-    )
     if c2w is not None:
         # special case to render full image
         rays_o, rays_d = get_rays(H, W, focal, c2w)
@@ -642,7 +638,7 @@ def config_parser():
                         help="Proportion of depth rays.")
     parser.add_argument("--pixels_to_colmap_units", type=float, default=1e-5,
                         help="Conversion factor from pixels to colmap units. Used to scale the projection error for depth supervision.")
-    parser.add_argument("--use_reprojection_error", type=float, default=1e-5,
+    parser.add_argument("--use_reprojection_error", action='store_true',
                         help="Use reprojection errors to weight terms of the sigma loss.")
 
     return parser
