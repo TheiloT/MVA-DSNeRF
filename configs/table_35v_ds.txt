@@ -44,3 +44,5 @@ sigma_loss = True
 sigma_lambda = 0.1
 depth_with_rgb = False
 depth_rays_prop = 0.4
+pixels_to_colmap_units = 1.17e-5
+use_reprojection_error = False

@@ -642,6 +642,8 @@ def config_parser():
                         help="Proportion of depth rays.")
     parser.add_argument("--pixels_to_colmap_units", type=float, default=1e-5,
                         help="Conversion factor from pixels to colmap units. Used to scale the projection error for depth supervision.")
+    parser.add_argument("--use_reprojection_error", type=float, default=1e-5,
+                        help="Use reprojection errors to weight terms of the sigma loss.")
 
     return parser
 
@@ -702,7 +704,7 @@ def train():
         print('NEAR FAR', near, far)
     elif args.dataset_type == 'llff':
         if args.colmap_depth:
-            depth_gts = load_colmap_depth(args.datadir, factor=args.factor, bd_factor=.75, pixels_to_colmap_units=arg.pixels_to_colmap_units)
+            depth_gts = load_colmap_depth(args.datadir, factor=args.factor, bd_factor=.75, pixels_to_colmap_units=args.pixels_to_colmap_units)
         images, poses, bds, render_poses, i_test = load_llff_data(args.datadir, args.factor,
                                                                   recenter=True, bd_factor=.75,
                                                                   spherify=args.spherify)
@@ -953,7 +955,10 @@ def train():
                 batch_rays_depth = batch_depth[:2] # 2 x B x 3
                 target_depth = batch_depth[2,:,0] # B
                 ray_weights = batch_depth[3,:,0]
-                ray_raw_weights = batch_depth[4, :, 0]
+                if args.use_reprojection_error:
+                    ray_raw_weights = batch_depth[4, :, 0]
+                else:
+                    ray_raw_weights = None
             else:
                 target_depth=None
                 ray_raw_weights=None
