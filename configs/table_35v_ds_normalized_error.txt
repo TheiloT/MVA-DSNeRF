@@ -1,7 +1,6 @@
 # Experiment info
-# WARNING: DEPRECATED CONFIG
-expname = table_35v_ds
-basedir = ./logs/table_35v_ds
+expname = table_35v_ds_normalized_error
+basedir = ./logs/table_35v_ds_normalized_error
 datadir = ./data/table_35v
 
 # Dataset options
@@ -45,5 +44,5 @@ sigma_loss = True
 sigma_lambda = 5e2
 depth_with_rgb = False
 depth_rays_prop = 0.4
-pixels_to_colmap_units = 1.17e-5
+cm_to_colmap_unit = 0.11
 use_reprojection_error = True

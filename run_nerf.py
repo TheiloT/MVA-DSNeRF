@@ -636,8 +636,8 @@ def config_parser():
                     help="normalize depth before calculating loss")
     parser.add_argument("--depth_rays_prop", type=float, default=0.5,
                         help="Proportion of depth rays.")
-    parser.add_argument("--pixels_to_colmap_units", type=float, default=1e-5,
-                        help="Conversion factor from pixels to colmap units. Used to scale the projection error for depth supervision.")
+    parser.add_argument("--cm_to_colmap_unit", type=float, default=1e-1,
+                        help="Conversion factor from cms to colmap units. Used to scale the projection error for depth supervision.")
     parser.add_argument("--use_reprojection_error", action='store_true',
                         help="Use reprojection errors to weight terms of the sigma loss.")
 
@@ -700,7 +700,7 @@ def train():
         print('NEAR FAR', near, far)
     elif args.dataset_type == 'llff':
         if args.colmap_depth:
-            depth_gts = load_colmap_depth(args.datadir, factor=args.factor, bd_factor=.75, pixels_to_colmap_units=args.pixels_to_colmap_units)
+            depth_gts = load_colmap_depth(args.datadir, factor=args.factor, bd_factor=.75, cm_to_colmap_unit=args.cm_to_colmap_unit)
         images, poses, bds, render_poses, i_test = load_llff_data(args.datadir, args.factor,
                                                                   recenter=True, bd_factor=.75,
                                                                   spherify=args.spherify)
