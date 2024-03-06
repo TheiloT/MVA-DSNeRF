@@ -386,9 +386,9 @@ def load_colmap_depth(basedir, factor=8, bd_factor=.75, cm_to_colmap_unit=0.1):
             coord_list.append(point2D/factor)
             weight_list.append(weight)
             # err_colmap_unit = err * pixels_to_colmap_units * sc  # Convert to same unit as depth
-            err_normalized = (err - Err_min) / Err_std  # We will convert this to the equivalent of a cm in the colmap normalized units
-            err_colmap_unit = err_normalized*cm_to_colmap_unit/2*sc  # 1 pixel error is assumed to correspond to approximately 1/4cm error on the real scene.
-            errors_list.append(err_colmap_unit)
+            # err_normalized = (err - Err_min) / Err_std  # We will convert this to the equivalent of a cm in the colmap normalized units
+            # err_colmap_unit = err_normalized*cm_to_colmap_unit/2*sc  # 1 pixel error is assumed to correspond to approximately 1/4cm error on the real scene.
+            errors_list.append(err)
         if len(depth_list) > 0:
             print(id_im, len(depth_list), np.min(depth_list), np.max(depth_list), np.mean(depth_list))
             data_list.append({"depth":np.array(depth_list), "coord":np.array(coord_list), "error":np.array(weight_list), "raw_error":np.array(errors_list)})
