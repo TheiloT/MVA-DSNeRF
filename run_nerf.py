@@ -1148,7 +1148,15 @@ def train():
 
     
         if i%args.i_print==0:
-            tqdm.write(f"[TRAIN] Iter: {i} Loss: {loss.item()}  PSNR: {psnr.item()}\n RGB Loss: {img_loss.item()}  Sigma Loss: {sigma_loss.item()}")
+            if args.depth_loss and args.sigma_loss:
+                tqdm.write(f"[TRAIN] Iter: {i} Loss: {loss.item()}  PSNR: {psnr.item()}\n RGB Loss: {img_loss.item()}  Depth Loss: {depth_loss.item()} Sigma Loss: {sigma_loss.item()}")
+            elif args.depth_loss:
+                tqdm.write(f"[TRAIN] Iter: {i} Loss: {loss.item()}  PSNR: {psnr.item()}\n RGB Loss: {img_loss.item()}  Depth Loss: {depth_loss.item()}")
+            elif args.sigma_loss:
+                tqdm.write(f"[TRAIN] Iter: {i} Loss: {loss.item()}  PSNR: {psnr.item()}\n RGB Loss: {img_loss.item()}  Sigma Loss: {sigma_loss.item()}")
+            else:
+                tqdm.write(f"[TRAIN] Iter: {i} Loss: {loss.item()}  PSNR: {psnr.item()}\n")
+                
         """
             print(expname, i, psnr.numpy(), loss.numpy(), global_step.numpy())
             print('iter time {:.05f}'.format(dt))
