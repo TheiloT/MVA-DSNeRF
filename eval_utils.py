@@ -6,7 +6,11 @@ import numpy as np
 import scipy
 from scipy import signal
 from scipy.ndimage.filters import convolve
-import tensorflow.compat.v1 as tf
+# import tensorflow.compat.v1 as tf
+
+
+def uint8_to_float32(image):
+    return (image / 255.).astype(np.float32)
 
 
 def _FSpecialGauss(size, sigma):
@@ -119,31 +123,31 @@ def ssim(img1, img2, max_val=255, filter_size=11,
 
 
 
-def load_lpips():
-  """Return a function to compute the LPIPS distance between two images.
+# def load_lpips():
+#   """Return a function to compute the LPIPS distance between two images.
 
-  Returns:
-    distance: a function that takes two images [H, W, C] scaled from 0 to 1, and
-    returns the LPIPS distance between them.
-  """
-  graph = tf.compat.v1.Graph()
-  session = tf.compat.v1.Session(graph=graph)
-  with graph.as_default():
-    input1 = tf.compat.v1.placeholder(tf.float32, [None, None, 3])
-    input2 = tf.compat.v1.placeholder(tf.float32, [None, None, 3])
-    with tf.gfile.Open('alex_net.pb', 'rb') as f:
-      graph_def = tf.GraphDef()
-      graph_def.ParseFromString(f.read())
-      # Required order for network is [B, C, H, W].
-      target = tf.transpose((input1[tf.newaxis] * 2.0) - 1.0, [0, 3, 1, 2])
-      pred = tf.transpose((input2[tf.newaxis] * 2.0) - 1.0, [0, 3, 1, 2])
-      tf.import_graph_def(
-          graph_def, input_map={'0:0':target, '1:0':pred})
-      distance = graph.get_operations()[-1].outputs[0]
+#   Returns:
+#     distance: a function that takes two images [H, W, C] scaled from 0 to 1, and
+#     returns the LPIPS distance between them.
+#   """
+#   graph = tf.compat.v1.Graph()
+#   session = tf.compat.v1.Session(graph=graph)
+#   with graph.as_default():
+#     input1 = tf.compat.v1.placeholder(tf.float32, [None, None, 3])
+#     input2 = tf.compat.v1.placeholder(tf.float32, [None, None, 3])
+#     with tf.gfile.Open('alex_net.pb', 'rb') as f:
+#       graph_def = tf.GraphDef()
+#       graph_def.ParseFromString(f.read())
+#       # Required order for network is [B, C, H, W].
+#       target = tf.transpose((input1[tf.newaxis] * 2.0) - 1.0, [0, 3, 1, 2])
+#       pred = tf.transpose((input2[tf.newaxis] * 2.0) - 1.0, [0, 3, 1, 2])
+#       tf.import_graph_def(
+#           graph_def, input_map={'0:0':target, '1:0':pred})
+#       distance = graph.get_operations()[-1].outputs[0]
 
-  def lpips_distance(img1, img2):
-    with graph.as_default():
-      return session.run(distance, {input1:img1, input2:img2})[0, 0, 0, 0]
-  return lpips_distance
+#   def lpips_distance(img1, img2):
+#     with graph.as_default():
+#       return session.run(distance, {input1:img1, input2:img2})[0, 0, 0, 0]
+#   return lpips_distance
 
 
