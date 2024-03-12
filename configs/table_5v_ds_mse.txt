@@ -1,6 +1,6 @@
 # Experiment info
-expname = table_5v_ds
-basedir = ./logs/table_5v_ds
+expname = table_5v_ds_mse
+basedir = ./logs/table_5v_ds_mse
 datadir = ./data/table_5v
 
 # Dataset options
@@ -12,7 +12,7 @@ lindisp = False
 llffhold = 8
 
 # logging
-i_print = 50
+i_print = 5
 i_img = 150002
 i_weights = 5000
 i_testset = 10000
@@ -38,9 +38,10 @@ render_only = False
 
 # Depth supervision
 colmap_depth = True
-depth_loss = False
-depth_lambda = 0
-sigma_loss = True
-sigma_lambda = 0.1
+depth_loss = True
+depth_lambda = 0.1
+sigma_loss = False
+sigma_lambda = 0
 depth_with_rgb = False
 depth_rays_prop = 0.4
+use_reprojection_error = False
