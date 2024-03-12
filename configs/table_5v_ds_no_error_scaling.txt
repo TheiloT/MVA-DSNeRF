@@ -25,7 +25,7 @@ no_batching = False
 no_reload = False
 no_coarse = False
 train_scene = [0,1,2,3,4]
-test_scene = [5, 6, 7, 8, 9]
+test_scene = [5, 6, 7, 9]
 
 # Rendering options
 N_samples = 64

@@ -40,7 +40,33 @@ def fetch_test_ground_truth(dataset_name, test_scenes_ids, factor=4):
     return np.array(ground_truth_images)
 
 
-def plot_psnr_over_training(experiment_name, dataset_name, test_scenes_ids, reference_experiment_name=None, factor=4):
+def plot_psnr_over_training(experiment_name, dataset_name, test_scenes_ids, factor=4):
+    # Fetch the test generations and ground truth
+    generated_scenes, iterations = fetch_test_generations(experiment_name)
+    ground_truth_scenes = fetch_test_ground_truth(dataset_name, test_scenes_ids, factor=factor)
+
+    # Compute test PSNR over training
+    psnr_means = []
+    psnr_mins = []
+    psnr_maxs = []
+    for eval_nb in range(generated_scenes.shape[0]):
+        psnrs_curr_eval = [psnr(gt, gen) for gt, gen in zip(ground_truth_scenes, generated_scenes[eval_nb])]
+        psnr_means.append(np.mean(psnrs_curr_eval))
+        psnr_mins.append(np.min(psnrs_curr_eval))
+        psnr_maxs.append(np.max(psnrs_curr_eval))
+
+    # Plot the PSNR values
+    plt.plot(iterations/1000, psnr_means, color="tab:blue", label='Mean PSNR')
+    plt.fill_between(iterations/1000, np.array(psnr_mins), np.array(psnr_maxs), alpha=0.3, label='Min-Max PSNR interval')
+    plt.xlabel('Iterations (in thousands)')
+    plt.ylabel('Test PSNR')
+    plt.title('Test PSNR over training')
+    plt.legend(loc='upper left')
+    plt.grid()
+    plt.show()
+
+
+def plot_psnr_over_training_with_reference(experiment_name, dataset_name, test_scenes_ids, reference_experiment_name=None, factor=4):
     # Fetch the test generations and ground truth
     generated_scenes, iterations = fetch_test_generations(experiment_name)
     reference_generated_scenes, reference_iterations = fetch_test_generations(reference_experiment_name)
@@ -83,8 +109,10 @@ def plot_psnr_over_training(experiment_name, dataset_name, test_scenes_ids, refe
 
 
 if __name__ == "__main__":
-    experiment_name = "table_35v_ds_no_error_scaling"
-    dataset_name = "table_35v"
-    reference_experiment_name = "table_35v_ds_mse"
-    test_scenes_ids = [35, 36, 37, 38, 39]
-    plot_psnr_over_training(experiment_name, dataset_name, test_scenes_ids, reference_experiment_name, factor=4)
+    experiment_name = "table_5v_no_ds"
+    dataset_name = "table_5v"
+    # reference_experiment_name = "table_35v_no_ds"
+    reference_experiment_name = None
+    test_scenes_ids = [5, 6, 7, 8]
+    plot_psnr_over_training(experiment_name, dataset_name, test_scenes_ids, factor=4)
+    # plot_psnr_over_training_with_reference(experiment_name, dataset_name, test_scenes_ids, reference_experiment_name, factor=4)
