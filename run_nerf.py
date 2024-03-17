@@ -638,8 +638,6 @@ def config_parser():
                         help="Proportion of depth rays.")
     parser.add_argument("--cm_to_colmap_unit", type=float, default=1e-1,
                         help="Conversion factor from cms to colmap units. Used to scale the projection error for depth supervision.")
-    parser.add_argument("--use_reprojection_error", action='store_true',
-                        help="Use reprojection errors to weight terms of the sigma loss.")
 
     return parser
 
@@ -951,13 +949,8 @@ def train():
                 batch_rays_depth = batch_depth[:2] # 2 x B x 3
                 target_depth = batch_depth[2,:,0] # B
                 ray_weights = batch_depth[3,:,0]
-                if args.use_reprojection_error:
-                    ray_raw_weights = batch_depth[4, :, 0]
-                else:
-                    ray_raw_weights = None
             else:
                 target_depth=None
-                ray_raw_weights=None
 
             # i_batch += N_rand
             # if i_batch >= rays_rgb.shape[0] or (args.colmap_depth and i_batch >= rays_depth.shape[0]):

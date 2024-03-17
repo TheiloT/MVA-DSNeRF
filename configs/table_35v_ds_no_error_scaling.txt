@@ -42,6 +42,3 @@ depth_loss = False
 depth_lambda = 0
 sigma_loss = True
 sigma_lambda = 1e-13
-depth_with_rgb = False
-depth_rays_prop = 0.4
-use_reprojection_error = True
