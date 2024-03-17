@@ -127,10 +127,11 @@ python run_nerf.py --config configs/fern_dsnerf.txt --render_only
 
 The video would be stored in the experiment directory.
 
-<!-- - to only compute the evaluation metrics:
+- To plot the termination distribution of a ray:
 ```
-python run_nerf.py --config configs/fern_dsnerf.txt --eval
-``` -->
+python run_nerf.py --config configs/fern_dsnerf.txt --render_distribution --distribution_view <view_idx> --distribution_ray_x <coord_x> --distribution_ray_y <coord_y>
+```
+with <coord_x> and <coord_y> the pixel coordinates of the point for which to render the ray, with pixel coordinates expressed for the images resized by ``factor`` config parameter. 
 
 
 #### Training

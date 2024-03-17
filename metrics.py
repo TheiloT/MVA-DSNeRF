@@ -12,6 +12,15 @@ def psnr(gt_image, gen_image):
     return -10 * np.log10(mse_fn(gt_image, gen_image))
 
 
+def plot_ray_termination_distribution(z_vals, weights, expname):
+    plt.plot(z_vals, weights)
+    plt.xlabel('Abscissa along ray')
+    plt.ylabel(r'Ray termination probability $h$')
+    # plt.title("Ray termination distribution")
+    plt.savefig(f"figures/ray_termination_distribution_{expname}.png")
+    plt.show()
+    
+
 def fetch_test_generations(experiment_name):
     """ 
     Returns:

@@ -144,3 +144,5 @@ scripts
 web
 *.pyc
 .vscode
+
+figures/

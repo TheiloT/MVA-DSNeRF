@@ -270,6 +270,16 @@ def get_rays_np(H, W, focal, c2w):
     return rays_o, rays_d
 
 
+def get_ray_by_coord_np(H, W, focal, c2w, coords):
+    i, j = (coords[0]-W*0.5)/focal, -(coords[1]-H*0.5)/focal
+    dir = np.stack([i, j, -np.ones_like(i)], -1) # dirs: 3
+    # Rotate ray directions from camera frame to the world frame
+    ray_d = np.sum(dir[np.newaxis, :] * c2w[:3,:3], -1)
+    # Translate camera frame's origin to the world frame. It is the origin of all rays.
+    ray_o = c2w[:3,-1]  # 3
+    return ray_o, ray_d
+
+
 def get_rays_by_coord_np(H, W, focal, c2w, coords):
     i, j = (coords[:,0]-W*0.5)/focal, -(coords[:,1]-H*0.5)/focal
     dirs = np.stack([i,j,-np.ones_like(i)],-1)
@@ -405,8 +415,9 @@ def sample_sigma(rays_o, rays_d, viewdirs, network, z_vals, network_query):
     sigma = F.relu(raw[...,3])
 
     rgb_map, disp_map, acc_map, weights, depth_map = raw2outputs(raw, z_vals, rays_d)
+    
 
-    return rgb, sigma, depth_map
+    return rgb, sigma, depth_map, weights
 
 
 def visualize_sigma(sigma, z_vals, filename):

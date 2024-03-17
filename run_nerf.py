@@ -25,6 +25,9 @@ from torch.utils.data import DataLoader
 
 from utils.generate_renderpath import generate_renderpath
 import cv2
+
+from metrics import plot_ray_termination_distribution
+
 # import time
 
 # concate_time, iter_time, split_time, loss_time, backward_time = [], [], [], [], []
@@ -636,8 +639,19 @@ def config_parser():
                     help="normalize depth before calculating loss")
     parser.add_argument("--depth_rays_prop", type=float, default=0.5,
                         help="Proportion of depth rays.")
+    
+    # new MVA experiments
     parser.add_argument("--cm_to_colmap_unit", type=float, default=1e-1,
                         help="Conversion factor from cms to colmap units. Used to scale the projection error for depth supervision.")
+    parser.add_argument("--render_distribution", action='store_true',
+                        help="Render the termination distribution of a ray specified with the --distribution_view and --distribution_ray parameters.")
+    parser.add_argument("--distribution_view", type=int, default=0,
+                        help="View index for the distribution rendering.")
+    parser.add_argument("--distribution_ray_x", type=int, default=0,
+                        help="x coordinate of the pixel (after applying resizing factor) corresponding to the ray for which to get termination distribution.")    
+    parser.add_argument("--distribution_ray_y", type=int, default=0,
+                        help="y coordinate of the pixel (after applying resizing factor) corresponding to the ray for which to get termination distribution.")   
+    
 
     return parser
 
@@ -848,6 +862,22 @@ def train():
 
             
             return
+        
+    # Short circuit if rendering ray distribution
+    if args.render_distribution:
+        print('RENDER DISTRIBUTION')
+        with torch.no_grad():
+            i_distribution = args.distribution_view
+            print(depth_gts[i_distribution]['coord'].max(axis=0))
+            ray_coords = [args.distribution_ray_x, args.distribution_ray_y]
+            ray_d, ray_o = get_ray_by_coord_np(H, W, focal, poses[i_distribution,:3,:4], ray_coords)
+            ray_d = np.reshape(ray_d, (1, 1, 3))
+            ray_o = np.reshape(ray_o, (1, 1, 3))
+            ray_o, ray_d = torch.Tensor(ray_o).to(device), torch.Tensor(ray_d).to(device)
+            rgb, sigma, z_vals, depth_maps, weights = render_test_ray(ray_o, ray_d, hwf, network=render_kwargs_test['network_fine'], **render_kwargs_test)
+            plot_ray_termination_distribution(z_vals.detach().cpu()[0], weights.detach().cpu()[0], args.expname)
+            
+        return
 
     # Prepare raybatch tensor if batching random rays
     if not args.colmap_depth:
