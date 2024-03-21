@@ -1,4 +1,16 @@
-# Depth-supervised NeRF: Fewer Views and Faster Training for Free
+# MVA project: Study of "Depth-supervised NeRF: Fewer Views and Faster Training for Free"
+
+This repository is a fork of the code provided with the article "Depth-supervised NeRF: Fewer Views and Faster Training for Free". This fork was created for the MVA project of the course "3D Point Cloud and Modeling". Additions to the original code are the following:
+ - Fixed various bugs from the original code;
+ - Plugged the sigma loss into the main NeRF pipeline with dedicated configuration arguments;
+ - Added functions to visualize ray termination distributions;
+ - Added functions to plot metrics from rendered test views.
+
+ The rest of this README is from the original code, unless explicitly stated otherwise.
+
+MVA student: Theïlo TERRISSE
+
+ ---
 
 [**Project**](https://www.cs.cmu.edu/~dsnerf/) | [**Paper**](https://arxiv.org/abs/2107.02791) | [**YouTube**](https://youtu.be/84LFxCo7ogk)
 
@@ -113,6 +125,8 @@ To generate the poses and sparse point cloud:
 python imgs2poses.py --scenedir <your_scenedir> --colmap_path <path_to_your_colmap_executable>
 ```
 
+[NEW FROM MVA PROJECT] Added option to configure your own path to COLMAP executable.
+
 Note: if you use this data format, make sure your `dataset_type` in the config file is set as `llff`.
 
 
@@ -127,7 +141,7 @@ python run_nerf.py --config configs/fern_dsnerf.txt --render_only
 
 The video would be stored in the experiment directory.
 
-- To plot the termination distribution of a ray:
+- [NEW FROM MVA PROJECT] To plot the termination distribution of a ray:
 ```
 python run_nerf.py --config configs/fern_dsnerf.txt --render_distribution --distribution_view <view_idx> --distribution_ray_x <coord_x> --distribution_ray_y <coord_y>
 ```
