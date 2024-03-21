@@ -337,7 +337,7 @@ def get_poses(images):
         poses.append(c2w)
     return np.array(poses)
 
-def load_colmap_depth(basedir, factor=8, bd_factor=.75, cm_to_colmap_unit=0.1):
+def load_colmap_depth(basedir, factor=8, bd_factor=.75, pixels_to_colmap_units=None):
     data_file = Path(basedir) / 'colmap_depth.npy'
     
     images = read_images_binary(Path(basedir) / 'sparse' / '0' / 'images.bin')
@@ -385,10 +385,11 @@ def load_colmap_depth(basedir, factor=8, bd_factor=.75, cm_to_colmap_unit=0.1):
             depth_list.append(depth)
             coord_list.append(point2D/factor)
             weight_list.append(weight)
-            # err_colmap_unit = err * pixels_to_colmap_units * sc  # Convert to same unit as depth
-            # err_normalized = (err - Err_min) / Err_std  # We will convert this to the equivalent of a cm in the colmap normalized units
-            # err_colmap_unit = err_normalized*cm_to_colmap_unit/2*sc  # 1 pixel error is assumed to correspond to approximately 1/4cm error on the real scene.
-            errors_list.append(err)
+            if pixels_to_colmap_units is not None:
+                err_colmap_unit = err * pixels_to_colmap_units * sc  # Convert to same unit as depth
+                errors_list.append(err_colmap_unit)
+            else:
+                errors_list.append(weight)
         if len(depth_list) > 0:
             print(id_im, len(depth_list), np.min(depth_list), np.max(depth_list), np.mean(depth_list))
             data_list.append({"depth":np.array(depth_list), "coord":np.array(coord_list), "error":np.array(weight_list), "raw_error":np.array(errors_list)})

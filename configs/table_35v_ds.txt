@@ -1,5 +1,4 @@
 # Experiment info
-# WARNING: DEPRECATED CONFIG
 expname = table_35v_ds
 basedir = ./logs/table_35v_ds
 datadir = ./data/table_35v

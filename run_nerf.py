@@ -641,8 +641,8 @@ def config_parser():
                         help="Proportion of depth rays.")
     
     # new MVA experiments
-    parser.add_argument("--cm_to_colmap_unit", type=float, default=1e-1,
-                        help="Conversion factor from cms to colmap units. Used to scale the projection error for depth supervision.")
+    parser.add_argument("--pixels_to_colmap_units", type=float, default=None,
+                        help="Conversion factor from pixels to colmap units. Used to scale the projection error for depth supervision.")
     parser.add_argument("--render_distribution", action='store_true',
                         help="Render the termination distribution of a ray specified with the --distribution_view and --distribution_ray parameters.")
     parser.add_argument("--distribution_view", type=int, default=0,
@@ -712,7 +712,7 @@ def train():
         print('NEAR FAR', near, far)
     elif args.dataset_type == 'llff':
         if args.colmap_depth:
-            depth_gts = load_colmap_depth(args.datadir, factor=args.factor, bd_factor=.75, cm_to_colmap_unit=args.cm_to_colmap_unit)
+            depth_gts = load_colmap_depth(args.datadir, factor=args.factor, bd_factor=.75, pixels_to_colmap_units=args.pixels_to_colmap_units)
         images, poses, bds, render_poses, i_test = load_llff_data(args.datadir, args.factor,
                                                                   recenter=True, bd_factor=.75,
                                                                   spherify=args.spherify)
@@ -979,8 +979,11 @@ def train():
                 batch_rays_depth = batch_depth[:2] # 2 x B x 3
                 target_depth = batch_depth[2,:,0] # B
                 ray_weights = batch_depth[3,:,0]
+                ray_raw_weights = batch_depth[4, :, 0]
             else:
                 target_depth=None
+                ray_weights=None
+                ray_raw_weights=None
 
             # i_batch += N_rand
             # if i_batch >= rays_rgb.shape[0] or (args.colmap_depth and i_batch >= rays_depth.shape[0]):
@@ -1032,18 +1035,18 @@ def train():
         else:
             N_batch = None
         
-
         # timer_concate = time.perf_counter()
 
         if args.sigma_loss:
             rgb, disp, acc, depth, extras = render(H, W, focal, chunk=args.chunk, rays=batch_rays, N_batch=N_batch, 
-                                                    supervision_depths=target_depth, err_weights=ray_weights,
+                                                    supervision_depths=target_depth, err_weights=ray_raw_weights,
                                                     verbose=i < 10, retraw=True,
                                                     **render_kwargs_train)
         else:
             rgb, disp, acc, depth, extras = render(H, W, focal, chunk=args.chunk, rays=batch_rays,
                                                     verbose=i < 10, retraw=True,
                                                     **render_kwargs_train)
+            
             
         # timer_iter = time.perf_counter()
 

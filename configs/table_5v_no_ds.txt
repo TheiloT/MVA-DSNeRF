@@ -41,4 +41,4 @@ colmap_depth = True
 depth_loss = False
 depth_lambda = 0
 sigma_loss = False
-sigma_lambda = 0.1
+sigma_lambda = 0
