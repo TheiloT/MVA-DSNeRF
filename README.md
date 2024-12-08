@@ -6,7 +6,9 @@ This repository is a fork of the code provided with the article "Depth-supervise
  - Added functions to visualize ray termination distributions;
  - Added functions to plot metrics from rendered test views.
 
- The rest of this README is from the original code, unless explicitly stated otherwise.
+The report of the project can be found in the [MVA_report](MVA_report/) folder.
+
+The rest of this README is from the original code, unless explicitly stated otherwise.
 
 MVA student: Theïlo TERRISSE
 
